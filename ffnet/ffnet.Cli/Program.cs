@@ -16,11 +16,16 @@ namespace ffnet.Cli
         private readonly string _templatePath = "template.xhtml";
 
         private HtmlDocument? _doc;
+        private Dictionary<string, string> _chapterTitlesMap;
 
         static async Task Main()
         {
             var app = new Program();
             await app.RunAsync();
+        }
+        public Program()
+        {
+            _chapterTitlesMap = new();
         }
 
         private async Task RunAsync()
@@ -37,7 +42,10 @@ namespace ffnet.Cli
                 if (string.IsNullOrEmpty(input) || input?.ToLower() == _terminatingInput)
                     _isDone = true;
                 else if (input?.ToLower() == _startInput)
+                {
                     await ProcessAsync();
+                    GenerateEntries();
+                }
                 else if (input?.ToLower() == _sourceInput)
                 {
                     Console.WriteLine("Opening sources...");
@@ -86,7 +94,7 @@ namespace ffnet.Cli
                 if (selected is not null)
                 {
                     var match = Regex.Match(selected.InnerText, ".+\\. (?<title>.+)");
-                    chapterTitle = match?.Groups["title"].Value;
+                    chapterTitle = match?.Groups["title"].Value ?? "";
                 }
 
                 // Load template
@@ -100,8 +108,40 @@ namespace ffnet.Cli
                 var path = Path.Combine(_outputPath, title);
                 Directory.CreateDirectory(path);
                 File.WriteAllText(Path.Combine(path, $"{chapterNo}.xhtml"), template);
-            }
 
+                // Map chapter title
+                _chapterTitlesMap.Add($"{title}-{chapterNo}", chapterTitle);
+            }
+        }
+
+        private void GenerateEntries()
+        {
+            var dirs = new DirectoryInfo(_outputPath).EnumerateDirectories();
+            foreach (var dir in dirs)
+            {
+                var body = "";
+                var contents = new List<string>();
+                var spine = new List<string>();
+                var toc = new List<string>();
+
+                var files = dir.EnumerateFiles("*.xhtml");
+                foreach (var file in files)
+                {
+                    var num = int.Parse(file.Name.Replace(file.Extension, ""));
+                    var id = $"chap{num}";
+                    var chapterTitle = _chapterTitlesMap[$"{dir.Name}-{num}"];
+
+                    contents.Add($"<item id=\"{id}\" href=\"Content/{file.Name}\" media-type=\"application/xhtml+xml\" />");
+                    spine.Add($"<itemref idref=\"{id}\" />");
+                    toc.Add($"<navPoint id=\"navPoint-{num+1}\" playOrder=\"{num+1}\"><navLabel><text>{num}. {chapterTitle}</text></navLabel><content src=\"Content/{file.Name}\"/></navPoint>");
+                }
+
+                body += $"{string.Join('\n', contents)}\n";
+                body += $"\n{string.Join('\n', spine)}\n";
+                body += $"\n{string.Join('\n', toc)}\n";
+
+                File.WriteAllText(Path.Combine(dir.FullName, "meta.txt"), body);
+            }
         }
     }
 }
