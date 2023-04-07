@@ -60,7 +60,7 @@ namespace ffnet.Cli
             {
                 // Load source
                 _doc = new HtmlDocument();
-                _doc.LoadHtml(File.ReadAllText(file.FullName));
+                await Task.Run(() => _doc.LoadHtml(File.ReadAllText(file.FullName)));
 
                 // Get info
                 var title = _doc.DocumentNode.SelectSingleNode("//*[@id=\"profile_top\"]/b").InnerText;
