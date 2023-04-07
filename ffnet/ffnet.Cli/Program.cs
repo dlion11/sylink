@@ -1,4 +1,5 @@
 ﻿using HtmlAgilityPack;
+using System.Diagnostics;
 using System.Text.RegularExpressions;
 
 namespace ffnet.Cli
@@ -33,10 +34,20 @@ namespace ffnet.Cli
 
                 // Get input
                 var input = GetInput() ?? "";
-                if (input?.ToLower() == _terminatingInput)
+                if (string.IsNullOrEmpty(input) || input?.ToLower() == _terminatingInput)
                     _isDone = true;
                 else if (input?.ToLower() == _startInput)
                     await ProcessAsync();
+                else if (input?.ToLower() == _sourceInput)
+                {
+                    Console.WriteLine("Opening sources...");
+                    Process.Start("explorer.exe", _sourcePath);
+                }
+                else if (input?.ToLower() == _outputInput)
+                {
+                    Console.WriteLine("Opening output...");
+                    Process.Start("explorer.exe", _outputPath);
+                }
             }
         }
 
