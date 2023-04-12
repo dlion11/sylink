@@ -83,6 +83,7 @@ namespace ffnet.Cli
 
                 // Get info
                 var title = _doc.DocumentNode.SelectSingleNode("//*[@id=\"profile_top\"]/b").InnerText;
+                title = string.Join("_", title.Split(Path.GetInvalidFileNameChars()));
                 var body = _doc.DocumentNode.SelectSingleNode("//*[@id=\"storytext\"]")?.InnerHtml
                     .Replace("<hr>", "<hr />")
                     .Replace("<br>", "<br />");
