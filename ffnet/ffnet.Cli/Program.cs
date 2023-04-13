@@ -84,8 +84,15 @@ namespace ffnet.Cli
                 // Get info
                 var title = _doc.DocumentNode.SelectSingleNode("//*[@id=\"profile_top\"]/b").InnerText;
                 title = string.Join("_", title.Split(Path.GetInvalidFileNameChars()));
-                var body = _doc.DocumentNode.SelectSingleNode("//*[@id=\"storytext\"]")?.InnerHtml
+
+                // Get body
+                var body = "";
+                var bodyNode = _doc.DocumentNode.SelectSingleNode("//*[@id=\"storytext\"]")?.ChildNodes.ToList();
+                foreach (var node in bodyNode!)
+                    body += (node.WriteTo() + "\n");
+                body = body.Trim()
                     .Replace("<hr>", "<hr />")
+                    .Replace("<hr size=\"1\" noshade=\"\">", "<hr size=\"1\" noshade=\"\" />")
                     .Replace("<br>", "<br />");
 
                 var selected = _doc.DocumentNode.SelectSingleNode("//*[@id=\"chap_select\"]/option[@selected]");
@@ -134,7 +141,7 @@ namespace ffnet.Cli
 
                     contents.Add($"<item id=\"{id}\" href=\"Content/{file.Name}\" media-type=\"application/xhtml+xml\" />");
                     spine.Add($"<itemref idref=\"{id}\" />");
-                    toc.Add($"<navPoint id=\"navPoint-{num+1}\" playOrder=\"{num+1}\"><navLabel><text>{num}. {chapterTitle}</text></navLabel><content src=\"Content/{file.Name}\"/></navPoint>");
+                    toc.Add($"<navPoint id=\"navPoint-{num + 1}\" playOrder=\"{num + 1}\"><navLabel><text>{num}. {chapterTitle}</text></navLabel><content src=\"Content/{file.Name}\"/></navPoint>");
                 }
 
                 body += $"{string.Join('\n', contents)}\n";
