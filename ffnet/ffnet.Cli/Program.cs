@@ -139,12 +139,12 @@ namespace ffnet.Cli
                     var id = $"chap{num}";
                     var chapterTitle = _chapterTitlesMap[$"{dir.Name}-{num}"];
 
-                    contents.Add($"<item id=\"{id}\" href=\"Content/{file.Name}\" media-type=\"application/xhtml+xml\" />");
-                    spine.Add($"<itemref idref=\"{id}\" />");
-                    toc.Add($"<navPoint id=\"navPoint-{num + 1}\" playOrder=\"{num + 1}\"><navLabel><text>{num}. {chapterTitle}</text></navLabel><content src=\"Content/{file.Name}\"/></navPoint>");
+                    contents.Add($"\t\t<item id=\"{id}\" href=\"Content/{file.Name}\" media-type=\"application/xhtml+xml\" />");
+                    spine.Add($"\t\t<itemref idref=\"{id}\" />");
+                    toc.Add($"\t\t<navPoint id=\"navPoint-{num + 1}\" playOrder=\"{num + 1}\"><navLabel><text>{num}. {chapterTitle}</text></navLabel><content src=\"Content/{file.Name}\"/></navPoint>");
                 }
 
-                body += $"{string.Join('\n', contents)}\n";
+                body += $"\n{string.Join('\n', contents)}\n";
                 body += $"\n{string.Join('\n', spine)}\n";
                 body += $"\n{string.Join('\n', toc)}\n";
 
