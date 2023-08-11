@@ -5,6 +5,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <SatelliteResourceLanguages>en-US</SatelliteResourceLanguages>
   </PropertyGroup>
 
   <!--Assembly Information-->
@@ -39,5 +40,8 @@
     <AssemblyVersion>$(VersionPrefix).$(Revision)</AssemblyVersion>
     <BuildTime>$([System.DateTime]::UtcNow)</BuildTime>
   </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
+  </ItemGroup>
 
 </Project>
