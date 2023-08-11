@@ -7,12 +7,14 @@ namespace sylink.Cli
         // Commands
         static RootCommand _rootCommand = new();
         static Argument<FileInfo?> _fileArg = new("--file");
+        static Option<bool> _overwriteOpt = new("--overwrite");
 
         static Program()
         {
             // Initialize commands, arguments, and options
             InitializeCommands();
             InitializeArguments();
+            InitializeOptions();
         }
 
         static void InitializeCommands()
@@ -28,23 +30,32 @@ namespace sylink.Cli
             _rootCommand?.AddArgument(_fileArg);
         }
 
+        static void InitializeOptions()
+        {
+            _overwriteOpt.Description = "Flag to overwrite destination file if exists";
+            _overwriteOpt.AddAlias("-o");
+            _overwriteOpt.SetDefaultValue(false);
+
+            _rootCommand.AddOption(_overwriteOpt);
+        }
+
         static async Task<int> Main(string[] args)
         {
             if (_rootCommand is null)
                 return await Task.FromResult(1);
 
             // Handle root command
-            _rootCommand.SetHandler((file) =>
+            _rootCommand.SetHandler((file, forceOverwrite) =>
             {
                 try
                 {
-                    Process(file);
+                    Process(file, forceOverwrite);
                 }
                 catch (FileNotFoundException ex)
                 {
                     Console.Error.WriteLine(ex.Message);
                 }
-            }, _fileArg);
+            }, _fileArg, _overwriteOpt);
 
 #if DEBUG
             //args = new[] { "--version" };
@@ -52,7 +63,7 @@ namespace sylink.Cli
             return await _rootCommand.InvokeAsync(args);
         }
 
-        static void Process(FileInfo? file)
+        static void Process(FileInfo? file, bool forceOverwrite)
         {
             // Check if file exists
             if (file is null)
@@ -78,12 +89,13 @@ namespace sylink.Cli
                     continue;
                 }
 
-                // Check if destination file already exists
-                if (destination.Exists)
+                // Check if destination file already exists and not forcing overwrite
+                if (destination.Exists && !forceOverwrite)
                 {
                     Console.Error.Write("Destination file already exist. SKIPPED.");
                     continue;
-                }
+                } else if (destination.Exists && forceOverwrite)
+                    destination.Delete();
 
                 // Create symlinks
                 File.CreateSymbolicLink(destination.FullName, source.FullName);
