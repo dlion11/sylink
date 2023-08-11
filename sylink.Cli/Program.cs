@@ -9,12 +9,20 @@ namespace sylink.Cli
         static Argument<FileInfo?> _fileArg = new("--file");
         static Option<bool> _overwriteOpt = new("--overwrite");
 
+        static List<SymLink> FilesToProcess;
+        static List<SymLink> FilesToOverwrite;
+        static List<SymLink> FilesToSkip;
+
         static Program()
         {
             // Initialize commands, arguments, and options
             InitializeCommands();
             InitializeArguments();
             InitializeOptions();
+
+            FilesToProcess = new();
+            FilesToOverwrite = new();
+            FilesToSkip = new();
         }
 
         static void InitializeCommands()
@@ -49,7 +57,17 @@ namespace sylink.Cli
             {
                 try
                 {
-                    Process(file, forceOverwrite);
+                    Analyze(file, forceOverwrite);
+                    ShowFiles();
+
+                    if (FilesToProcess.Any() || FilesToOverwrite.Any())
+                    {
+                        Console.Write("\nDo you want to continue? (y/N): ");
+                        var input = Console.ReadLine();
+
+                        if (input?.ToLower() == "y")
+                            Process();
+                    }
                 }
                 catch (FileNotFoundException ex)
                 {
@@ -63,7 +81,7 @@ namespace sylink.Cli
             return await _rootCommand.InvokeAsync(args);
         }
 
-        static void Process(FileInfo? file, bool forceOverwrite)
+        static void Analyze(FileInfo? file, bool forceOverwrite)
         {
             // Check if file exists
             if (file is null)
@@ -71,6 +89,8 @@ namespace sylink.Cli
 
             // Get lines
             var lines = File.ReadAllLines(file.FullName).Select(x => x.Split('\t')).ToArray();
+
+            Console.Write("Analyzing... ");
             foreach (var line in lines)
             {
                 // Check if lines have 2 elements
@@ -80,25 +100,58 @@ namespace sylink.Cli
                 // Get source and destination file info
                 var source = new FileInfo(line[0]);
                 var destination = new FileInfo(line[1]);
-                
-                // Check if source file exists
-                Console.Write($"[{source.Name}] Creating '{destination.FullName}'... ");
-                if (source is null || !source.Exists)
+
+                var symlink = new SymLink(source, destination);
+                if (!symlink.HasSource || (symlink.Destination.Exists && !forceOverwrite))
+                    FilesToSkip.Add(symlink);
+                else if (symlink.Destination.Exists && forceOverwrite)
                 {
-                    Console.Error.Write("Source file does not exist. SKIPPED.");
-                    continue;
+                    // Check if existing file is a real file or link
+                    if (symlink.Destination.LinkTarget is null)
+                        FilesToSkip.Add(symlink);
+                    else
+                        FilesToOverwrite.Add(symlink);
                 }
+                else
+                    FilesToProcess.Add(symlink);
+            }
+            Console.WriteLine("Done.");
+        }
 
-                // Check if destination file already exists and not forcing overwrite
-                if (destination.Exists && !forceOverwrite)
-                {
-                    Console.Error.Write("Destination file already exist. SKIPPED.");
-                    continue;
-                } else if (destination.Exists && forceOverwrite)
-                    destination.Delete();
+        static void ShowFiles()
+        {
+            ShowFiles("\n[Files to process]", FilesToProcess);
+            ShowFiles("\n[Files to overwrite]", FilesToOverwrite);
+            ShowFiles("\n[Files to skip]", FilesToSkip);
+        }
 
-                // Create symlinks
-                File.CreateSymbolicLink(destination.FullName, source.FullName);
+        static void ShowFiles(string message, IEnumerable<SymLink> collection)
+        {
+            if (collection.Any())
+            {
+                Console.WriteLine(message);
+                Console.WriteLine(string.Join("\n\n", collection.Select(x => x.ToString())));
+            }
+        }
+
+        static void Process()
+        {
+            // Delete existing destination files
+            foreach (var file in FilesToOverwrite)
+                file.Destination.Delete();
+
+            // Process files
+            Console.WriteLine();
+            Process(FilesToProcess);
+            Process(FilesToOverwrite);
+        }
+
+        static void Process(IEnumerable<SymLink> collection)
+        {
+            foreach (var file in collection)
+            {
+                Console.WriteLine($"{file}");
+                File.CreateSymbolicLink(file.Destination.FullName, file.Source!.FullName);
                 Console.WriteLine("Done.");
             }
         }
