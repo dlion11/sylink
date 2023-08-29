@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <SatelliteResourceLanguages>en-US</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <!--Assembly Information-->
+  <PropertyGroup>
+    <Title>$(AssemblyName)</Title>
+    <Authors>D. Lion</Authors>
+    <Description>A utility to batch create symbolic links listed in a file.</Description>
+    <Product>sylink</Product>
+    <Company>$(Authors)</Company>
+    <Copyright>Copyright © $(Company) $([System.DateTime]::UtcNow.ToString(yyyy))</Copyright>
+
+    <AssemblyTitle>$(Title)</AssemblyTitle>
+    <AssemblyName>sylink</AssemblyName>
+  </PropertyGroup>
+
+  <!--Version-->
+  <PropertyGroup>
+    <VersionPrefix>0.1.0</VersionPrefix>
+    <VersionSuffix></VersionSuffix>
+    <ProjectStart>2023-08-11T12:44:00+08:00</ProjectStart>
+    <Base>0001-01-01T00:00:00+08:00</Base>
+
+    <!--Generated-->
+    <StartTicks>$([MSBuild]::Divide($([System.DateTime]::Parse($(ProjectStart)).ToUniversalTime().Ticks), 10000000))</StartTicks>
+    <BaseTicks>$([MSBuild]::Divide($([System.DateTime]::Parse($(Base)).ToUniversalTime().Ticks), 10000000))</BaseTicks>
+    <BuildTimeTicks>$([MSBuild]::Divide($([System.DateTime]::UtcNow.Ticks), 10000000))</BuildTimeTicks>
+    <Difference>$([MSBuild]::Subtract($(StartTicks), $(BaseTicks)))</Difference>
+    <Delta>$([MSBuild]::Subtract($(BuildTimeTicks), $(Difference)))</Delta>
+    <Revision>$([MSBuild]::Modulo($(Delta), 65535).ToString(0))</Revision>
+
+    <Version>$(VersionPrefix)$(VersionSuffix)</Version>
+    <AssemblyVersion>$(VersionPrefix).$(Revision)</AssemblyVersion>
+    <BuildTime>$([System.DateTime]::UtcNow)</BuildTime>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
+  </ItemGroup>
+
+</Project>
